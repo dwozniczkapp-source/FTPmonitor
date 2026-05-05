@@ -211,11 +211,28 @@ class MainWindow(QMainWindow):
 
         for btn in [self.install_btn, self.uninstall_btn,
                     self.svc_start_btn, self.svc_stop_btn]:
-            btn.setFixedHeight(34)
+            btn.setFixedSize(140, 36)
+            btn.setStyleSheet(
+                "color:white;border-radius:6px;font-weight:bold;font-size:13px;"
+                "padding:0 12px;"
+            )
 
-        self.install_btn.setStyleSheet(  "background:#2980b9;color:white;border-radius:4px;font-weight:bold;")
-        self.svc_start_btn.setStyleSheet("background:#27ae60;color:white;border-radius:4px;font-weight:bold;")
-        self.svc_stop_btn.setStyleSheet( "background:#c0392b;color:white;border-radius:4px;font-weight:bold;")
+        self.install_btn.setStyleSheet(
+            "background:#2980b9;color:white;border-radius:6px;font-weight:bold;"
+            "font-size:13px;padding:0 12px;"
+        )
+        self.uninstall_btn.setStyleSheet(
+            "background:#555;color:white;border-radius:6px;font-weight:bold;"
+            "font-size:13px;padding:0 12px;"
+        )
+        self.svc_start_btn.setStyleSheet(
+            "background:#27ae60;color:white;border-radius:6px;font-weight:bold;"
+            "font-size:13px;padding:0 12px;"
+        )
+        self.svc_stop_btn.setStyleSheet(
+            "background:#c0392b;color:white;border-radius:6px;font-weight:bold;"
+            "font-size:13px;padding:0 12px;"
+        )
 
         self.install_btn.clicked.connect(  self._install_service)
         self.uninstall_btn.clicked.connect(self._uninstall_service)
@@ -235,11 +252,11 @@ class MainWindow(QMainWindow):
         # ── Admin warning ──
         if not is_admin():
             warn = QLabel(
-                "⚠  Uruchom jako Administrator aby móc instalować/sterować serwisem Windows!"
+                "⚠ Uruchom jako Administrator, aby instalować i sterować serwisem Windows."
             )
             warn.setStyleSheet(
-                "background:#7d3c00;color:#f8c471;padding:6px 10px;"
-                "border-radius:4px;font-weight:bold;"
+                "background:#4a3000;color:#e7d9c6;padding:5px 10px;"
+                "border-radius:6px;font-size:11px;"
             )
             root.addWidget(warn)
 
@@ -268,6 +285,11 @@ class MainWindow(QMainWindow):
         add_btn  = QPushButton("➕ Dodaj profil")
         edit_btn = QPushButton("✏ Edytuj")
         del_btn  = QPushButton("🗑 Usuń")
+        for btn in [add_btn, edit_btn, del_btn]:
+            btn.setFixedHeight(32)
+            btn.setStyleSheet(
+                "border-radius:6px;padding:0 12px;font-weight:bold;font-size:12px;"
+            )
         add_btn.clicked.connect(self._add_profile)
         edit_btn.clicked.connect(self._edit_profile)
         del_btn.clicked.connect(self._delete_profile)
