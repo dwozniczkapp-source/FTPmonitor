@@ -24,7 +24,11 @@ import servicemanager
 
 # ── Ścieżki ─────────────────────────────────────────────────────────────────
 BASE_DIR   = os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__))
-CONFIG_FILE = os.path.join(os.path.expanduser("~"), "ftp_monitor_config.json")
+CONFIG_FILE = os.path.join(
+    os.environ.get("ALLUSERSPROFILE", "C:\\ProgramData"),
+    "FTPMonitor",
+    "ftp_monitor_config.json",
+)
 LOG_FILE    = os.path.join(BASE_DIR, "ftp_monitor_service.log")
 
 # ── Logger ───────────────────────────────────────────────────────────────────

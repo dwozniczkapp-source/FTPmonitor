@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 FTP Monitor - GUI (menedżer konfiguracji + kontrola serwisu Windows)
 """
@@ -10,6 +10,7 @@ import ftplib
 import subprocess
 import ctypes
 import threading
+import shutil
 from datetime import datetime
 
 from PyQt5.QtWidgets import (
@@ -24,7 +25,12 @@ from PyQt5.QtGui import QFont, QColor, QPalette, QIcon
 
 # ── Stałe ────────────────────────────────────────────────────────────────────
 SERVICE_NAME = "FTPMonitorService"
-CONFIG_FILE  = os.path.join(os.path.expanduser("~"), "ftp_monitor_config.json")
+CONFIG_FILE  = os.path.join(
+    os.environ.get("ALLUSERSPROFILE", "C:\\ProgramData"),
+    "FTPMonitor",
+    "ftp_monitor_config.json",
+)
+LEGACY_CONFIG_FILE = os.path.join(os.path.expanduser("~"), "ftp_monitor_config.json")
 
 # Ścieżka do exe serwisu — zakładamy że jest obok GUI exe
 BASE_DIR     = os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__))
@@ -494,8 +500,18 @@ class MainWindow(QMainWindow):
         self._config["local_folder"]      = self.local_folder_edit.text().strip()
         self._config["interval_seconds"]  = self.interval_spin.value()
         self._save_config()
-        QMessageBox.information(self, "Zapisano",
-            "✔ Ustawienia zapisane. Serwis zastosuje je przy następnym cyklu.")
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                saved_json = f.read()
+        except Exception as e:
+            QMessageBox.critical(self, "Błąd", f"Nie można odczytać zapisanego JSON:\n{e}")
+            return
+        QMessageBox.information(
+            self,
+            "Zapisano ustawienia",
+            "Ustawienia zostały zapisane. Aktualna zawartość pliku JSON:\n\n"
+            f"{saved_json}"
+        )
 
     # ── Log ──────────────────────────────────────────────────────────────────
 
@@ -522,6 +538,13 @@ class MainWindow(QMainWindow):
     # ── Config ───────────────────────────────────────────────────────────────
 
     def _load_config(self) -> dict:
+        if (not os.path.exists(CONFIG_FILE)) and os.path.exists(LEGACY_CONFIG_FILE):
+            try:
+                os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+                shutil.copy2(LEGACY_CONFIG_FILE, CONFIG_FILE)
+            except Exception:
+                pass
+
         if os.path.exists(CONFIG_FILE):
             try:
                 with open(CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -530,8 +553,10 @@ class MainWindow(QMainWindow):
                 pass
         return {"profiles": [], "interval_seconds": 60, "local_folder": ""}
 
+
     def _save_config(self):
         try:
+            os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 json.dump(self._config, f, indent=2, ensure_ascii=False)
         except Exception as e:
@@ -570,3 +595,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
