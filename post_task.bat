@@ -74,3 +74,4 @@ echo  EXE: dist\ftp_monitor_service.exe
 echo       dist\ftp_monitor_gui.exe
 echo ============================================================
 endlocal
+pause
