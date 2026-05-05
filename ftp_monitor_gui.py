@@ -106,7 +106,10 @@ class ProfileDialog(QDialog):
         self.pass_edit     = QLineEdit(p.get("password", ""))
         self.pass_edit.setEchoMode(QLineEdit.Password)
         self.dir_edit      = QLineEdit(p.get("remote_dir", "/"))
-        self.sub_edit      = QLineEdit(p.get("local_subfolder", ""))
+        subfolder = p.get("local_subfolder", "")
+        if subfolder in ("/", "\\"):
+            subfolder = ""
+        self.sub_edit      = QLineEdit(subfolder)
         self.passive_cb    = QCheckBox("Tryb pasywny (PASV)")
         self.passive_cb.setChecked(p.get("passive", True))
         self.enabled_cb    = QCheckBox("Profil aktywny")

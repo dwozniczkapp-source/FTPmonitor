@@ -41,7 +41,6 @@ logging.basicConfig(
     ],
 )
 log = logging.getLogger("FTPMonitorService")
-LIST_LOGGED_PROFILES: set[str] = set()
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -69,11 +68,15 @@ def process_profile(profile: dict, local_root: str):
     if not host:
         return
 
-    subfolder = profile.get("local_subfolder", "") or name
-    local_dir = os.path.join(local_root, subfolder)
+    local_subfolder = (profile.get("local_subfolder", "") or "").strip()
+    if local_subfolder in ("", "/", "\\"):
+        local_dir = local_root
+    else:
+        local_dir = os.path.join(local_root, local_subfolder)
     os.makedirs(local_dir, exist_ok=True)
 
     log.info(f"[{name}] Łączę z {host}:{port} ...")
+    log.info(f"[{name}] Katalog lokalny zapisu: {local_dir}")
 
     with ftplib.FTP() as ftp:
         ftp.connect(host, port, timeout=20)
@@ -84,14 +87,12 @@ def process_profile(profile: dict, local_root: str):
         list_lines: list[str] = []
         ftp.retrlines("LIST", list_lines.append)
 
-        if name not in LIST_LOGGED_PROFILES:
-            log.info(f"[{name}] Pełny wynik LIST ({len(list_lines)} linii):")
-            if list_lines:
-                for line in list_lines:
-                    log.info(f"[{name}] LIST: {line}")
-            else:
-                log.info(f"[{name}] LIST: <pusto>")
-            LIST_LOGGED_PROFILES.add(name)
+        log.debug(f"[{name}] Pełny wynik LIST ({len(list_lines)} linii):")
+        if list_lines:
+            for line in list_lines:
+                log.debug(f"[{name}] LIST: {line}")
+        else:
+            log.debug(f"[{name}] LIST: <pusto>")
 
         files: list[str] = []
         for line in list_lines:
