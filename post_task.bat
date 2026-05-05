@@ -1,10 +1,12 @@
 @echo off
+setlocal
+
 echo ============================================================
 echo  FTP Monitor - post_task: build + git push
 echo ============================================================
 echo.
 
-:: ── 1. Build ────────────────────────────────────────────────────────────────
+:: 1. Build
 echo [1/3] Buduje EXE...
 
 pyinstaller --onefile --noconsole --name ftp_monitor_service ^
@@ -34,7 +36,7 @@ if errorlevel 1 (
 echo [OK] Build zakonczony.
 echo.
 
-:: ── 2. Git add (tylko zrodla) ────────────────────────────────────────────────
+:: 2. Git add (tylko zrodla)
 echo [2/3] Git add...
 
 git add ftp_monitor_service.py ftp_monitor_gui.py build.bat post_task.bat AGENTS.md README_FTPMonitor.md .gitignore
@@ -44,27 +46,31 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: ── 3. Commit + push ─────────────────────────────────────────────────────────
+:: 3. Commit + push (zawsze po buildzie)
 echo [3/3] Commit i push...
 
-:: Wiadomosc commita z data i godzina
-for /f "tokens=1-3 delims=." %%a in ("%date%") do set D=%%a.%%b.%%c
-for /f "tokens=1-2 delims=:" %%a in ("%time: =0%") do set T=%%a:%%b
+for /f "tokens=1-4 delims=/.- " %%a in ("%date%") do set D=%%a-%%b-%%c-%%d
+for /f "tokens=1-3 delims=:., " %%a in ("%time%") do set T=%%a-%%b-%%c
 set MSG=auto: build %D% %T%
 
-git diff --cached --quiet
+git commit --allow-empty-message -m "%MSG%"
 if errorlevel 1 (
-    git commit -m "%MSG%"
-    git push origin master
-    echo.
-    echo [OK] Wypchnięto: %MSG%
-) else (
-    echo [INFO] Brak zmian do commitowania.
+    echo [BLAD] git commit nie powiodl sie!
+    exit /b 1
 )
 
+git push origin master
+if errorlevel 1 (
+    echo [BLAD] git push nie powiodl sie!
+    exit /b 1
+)
+
+echo.
+echo [OK] Wypchnieto: %MSG%
 echo.
 echo ============================================================
 echo  Gotowe!
 echo  EXE: dist\ftp_monitor_service.exe
 echo       dist\ftp_monitor_gui.exe
 echo ============================================================
+endlocal
