@@ -41,6 +41,7 @@ logging.basicConfig(
     ],
 )
 log = logging.getLogger("FTPMonitorService")
+LIST_LOGGED_PROFILES: set[str] = set()
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -80,22 +81,45 @@ def process_profile(profile: dict, local_root: str):
         ftp.login(user, password)
         ftp.cwd(remote_dir)
 
-        files = []
-        ftp.retrlines("NLST", files.append)
+        list_lines: list[str] = []
+        ftp.retrlines("LIST", list_lines.append)
+
+        if name not in LIST_LOGGED_PROFILES:
+            log.info(f"[{name}] Pełny wynik LIST ({len(list_lines)} linii):")
+            if list_lines:
+                for line in list_lines:
+                    log.info(f"[{name}] LIST: {line}")
+            else:
+                log.info(f"[{name}] LIST: <pusto>")
+            LIST_LOGGED_PROFILES.add(name)
+
+        files: list[str] = []
+        for line in list_lines:
+            if not line:
+                continue
+            entry_type = line[0]
+            parts = line.split(maxsplit=8)
+            if len(parts) < 9:
+                continue
+            entry_name = parts[8].strip()
+
+            if entry_name in (".", ".."):
+                continue
+            if entry_type == "d":
+                log.debug(f"[{name}] Pomijam katalog: {entry_name}")
+                continue
+            if entry_type != "-":
+                log.debug(f"[{name}] Pomijam wpis typu '{entry_type}': {entry_name}")
+                continue
+            files.append(entry_name)
 
         if not files:
-            log.info(f"[{name}] Brak plików")
+            log.info(f"[{name}] Brak plików do pobrania")
             return
 
-        log.info(f"[{name}] Znaleziono {len(files)} element(ów)")
+        log.info(f"[{name}] Znaleziono {len(files)} plik(ów)")
 
         for filename in files:
-            # pomijamy katalogi przez SIZE
-            try:
-                ftp.size(filename)
-            except ftplib.error_perm:
-                log.debug(f"[{name}] Pomijam (katalog?): {filename}")
-                continue
 
             local_path = os.path.join(local_dir, filename)
             with open(local_path, "wb") as f:
